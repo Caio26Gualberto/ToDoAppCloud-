@@ -61,7 +61,7 @@ namespace ToDoApp.Application.Services
             var query = taskItems
                 .WhereIf(!string.IsNullOrEmpty(input.Title), x => x.Title.ToLower().Contains(input.Title!.ToLower()))
                 .WhereIf(input.TaskPriority != default, x => x.TaskPriority == input.TaskPriority)
-                .WhereIf(input.TaskCategory != null && input.TaskCategory.Any(),x => x.TaskCategories.Any(tc => input.TaskCategory.Contains(tc.Category)))
+                .WhereIf(input.TaskCategory != null && input.TaskCategory.Any(),x => input.TaskCategory!.All(c => x.TaskCategories.Select(tc => tc.Category).Contains(c)))
                 .WhereIf(input.MinDueDate.HasValue, x => x.DueDate.HasValue && x.DueDate.Value.Date >= input.MinDueDate!.Value.Date)
                 .WhereIf(input.MaxDueDate.HasValue, x => x.DueDate.HasValue && x.DueDate.Value.Date <= input.MaxDueDate!.Value.Date)
                 .WhereIf(input.IsCompleted.HasValue, x => x.IsCompleted == input.IsCompleted);

@@ -1,152 +1,130 @@
 <template>
   <div class="task-filters">
-    <div class="filters-header">
+    <!-- Header com botão de abrir/fechar -->
+    <div class="filters-header" @click="toggleFilters">
       <h3>Filtros</h3>
-      <div class="filters-buttons">
-        <button 
-          @click="clearFilters" 
-          class="btn-clear"
-          title="Limpar todos os filtros"
-        >
-          Limpar
-        </button>
-        <button 
-          @click="getTasks" 
-          class="btn-search"
-          title="Pesquisar tarefas"
-        >
-          Pesquisar
-        </button>
-      </div>
+      <span class="toggle-icon">
+        {{ isOpen ? '▲' : '▼' }}
+      </span>
     </div>
 
-    <div class="filters-content">
-      <!-- Busca -->
-      <div class="filter-group">
-        <label for="search">Buscar</label>
-        <input
-          id="search"
-          v-model="localFilters.searchTerm"
-          type="text"
-          placeholder="Buscar tarefas..."
-          class="form-control"
-          @input="updateFilters"
-        />
-      </div>
+    <!-- Conteúdo com animação -->
+    <Transition name="accordion">
+      <div v-show="isOpen" class="filters-body">
+        <div class="filters-buttons">
+          <button @click.stop="clearFilters" class="btn-clear" title="Limpar todos os filtros">
+            Limpar
+          </button>
+          <button @click.stop="getTasks" class="btn-search" title="Pesquisar tarefas">
+            Pesquisar
+          </button>
+        </div>
 
-      <!-- Prioridade -->
-      <div class="filter-group">
-        <label for="priority">Prioridade</label>
-        <select
-          id="priority"
-          v-model.number="localFilters.priority"
-          class="form-control"
-          @change="updateFilters"
-        >
-          <option :value="null">Todas as prioridades</option>
-          <option :value="ETaskPriority.NUMBER_0">Baixa</option>
-          <option :value="ETaskPriority.NUMBER_1">Normal</option>
-          <option :value="ETaskPriority.NUMBER_2">Alta</option>
-          <option :value="ETaskPriority.NUMBER_3">Crítica</option>
-        </select>
-      </div>
+        <!-- Filtros principais -->
+        <div class="filters-content">
+          <!-- Busca -->
+          <div class="filter-group">
+            <label for="search">Buscar</label>
+            <input
+              id="search"
+              v-model="localFilters.searchTerm"
+              type="text"
+              placeholder="Buscar tarefas..."
+              class="form-control"
+              @input="updateFilters"
+            />
+          </div>
 
-      <!-- Categoria -->
-      <div class="filter-group">
-        <label>Categoria</label>
-        <div class="checkbox-group">
-          <label>
-            <input type="checkbox" :value="ETaskCategory.NUMBER_0" v-model="localFilters.category"/>
-            Casa
-          </label>
-          <label>
-            <input type="checkbox" :value="ETaskCategory.NUMBER_1" v-model="localFilters.category" />
-            Trabalho
-          </label>
-          <label>
-            <input type="checkbox" :value="ETaskCategory.NUMBER_2" v-model="localFilters.category" />
-            Pessoal
-          </label>
-          <label>
-            <input type="checkbox" :value="ETaskCategory.NUMBER_3" v-model="localFilters.category" />
-            Compras
-          </label>
+          <!-- Prioridade -->
+          <div class="filter-group">
+            <label for="priority">Prioridade</label>
+            <select
+              id="priority"
+              v-model.number="localFilters.priority"
+              class="form-control"
+              @change="updateFilters"
+            >
+              <option :value="null">Todas as prioridades</option>
+              <option :value="ETaskPriority.NUMBER_0">Baixa</option>
+              <option :value="ETaskPriority.NUMBER_1">Normal</option>
+              <option :value="ETaskPriority.NUMBER_2">Alta</option>
+              <option :value="ETaskPriority.NUMBER_3">Crítica</option>
+            </select>
+          </div>
+
+          <!-- Categoria -->
+          <div class="filter-group">
+            <label>Categoria</label>
+            <div class="checkbox-group">
+              <label><input type="checkbox" :value="ETaskCategory.NUMBER_0" v-model="localFilters.category"/> Casa</label>
+              <label><input type="checkbox" :value="ETaskCategory.NUMBER_1" v-model="localFilters.category"/> Trabalho</label>
+              <label><input type="checkbox" :value="ETaskCategory.NUMBER_2" v-model="localFilters.category"/> Pessoal</label>
+              <label><input type="checkbox" :value="ETaskCategory.NUMBER_3" v-model="localFilters.category"/> Compras</label>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="filter-group">
+            <label for="status">Status</label>
+            <select
+              id="status"
+              v-model="localFilters.isCompleted"
+              class="form-control"
+              @change="updateFilters"
+            >
+              <option :value="null">Todas as tarefas</option>
+              <option :value="false">Pendente</option>
+              <option :value="true">Completa</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Data -->
+        <div class="filters-date">
+          <div class="filter-group">
+            <label for="min-date">Data mínima</label>
+            <input id="min-date" type="date" class="form-control"
+                   v-model="localFilters.minDueDate" @input="updateFilters"/>
+          </div>
+
+          <div class="filter-group">
+            <label for="max-date">Data máxima</label>
+            <input id="max-date" type="date" class="form-control"
+                   v-model="localFilters.maxDueDate" @input="updateFilters"/>
+          </div>
+        </div>
+
+        <!-- Resumo -->
+        <div class="filters-summary" v-if="hasActiveFilters">
+          <span class="summary-text">Filtros ativos:</span>
+          <div class="active-filters">
+            <span v-if="localFilters.searchTerm" class="filter-tag">
+              Busca: "{{ localFilters.searchTerm }}"
+            </span>
+            <span v-if="localFilters.priority !== undefined" class="filter-tag">
+              Prioridade: {{ formatPriority(localFilters.priority) }}
+            </span>
+            <span v-if="localFilters.category?.length" class="filter-tag">
+              Categoria: {{ formatCategory(localFilters.category) }}
+            </span>
+            <span v-if="localFilters.isCompleted !== null" class="filter-tag">
+              Status: {{ localFilters.isCompleted ? 'Completa' : 'Pendente' }}
+            </span>
+            <span v-if="localFilters.minDueDate" class="filter-tag">
+              Data mínima: {{ localFilters.minDueDate }}
+            </span>
+            <span v-if="localFilters.maxDueDate" class="filter-tag">
+              Data máxima: {{ localFilters.maxDueDate }}
+            </span>
+          </div>
         </div>
       </div>
-
-      <!-- Status -->
-      <div class="filter-group">
-        <label for="status">Status</label>
-        <select
-          id="status"
-          v-model="localFilters.isCompleted"
-          class="form-control"
-          @change="updateFilters"
-        >
-          <option :value="null">Todas as tarefas</option>
-          <option :value="false">Pendente</option>
-          <option :value="true">Completa</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Data -->
-    <div class="filters-date">
-      <div class="filter-group">
-        <label for="min-date">Data mínima</label>
-        <input
-          id="min-date"
-          type="date"
-          class="form-control"
-          v-model="localFilters.minDueDate"
-          @input="updateFilters"
-        />
-      </div>
-
-      <div class="filter-group">
-        <label for="max-date">Data máxima</label>
-        <input
-          id="max-date"
-          type="date"
-          class="form-control"
-          v-model="localFilters.maxDueDate"
-          @input="updateFilters"
-        />
-      </div>
-    </div>
-
-    <!-- Resumo dos filtros -->
-    <div class="filters-summary" v-if="hasActiveFilters">
-      <span class="summary-text">Filtros ativos:</span>
-      <div class="active-filters">
-        <span v-if="localFilters.searchTerm" class="filter-tag">
-          Busca: "{{ localFilters.searchTerm }}"
-        </span>
-        <span v-if="localFilters.priority !== undefined" class="filter-tag">
-          Prioridade: {{ formatPriority(localFilters.priority) }}
-        </span>
-        <span v-if="localFilters.category && localFilters.category.length > 0" class="filter-tag">
-          Categoria: {{ formatCategory(localFilters.category) }}
-        </span>
-        <span v-if="localFilters.isCompleted !== null" class="filter-tag">
-          Status: {{ localFilters.isCompleted ? 'Completa' : 'Pendente' }}
-        </span>
-        <span v-if="localFilters.isCompleted === null" class="filter-tag">
-          Status: {{ 'Todas as tarefas' }}
-        </span>
-        <span v-if="localFilters.minDueDate" class="filter-tag">
-          Data mínima: {{ localFilters.minDueDate }}
-        </span>
-        <span v-if="localFilters.maxDueDate" class="filter-tag">
-          Data máxima: {{ localFilters.maxDueDate }}
-        </span>
-      </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, watch } from 'vue'
+import { reactive, computed, watch, ref } from 'vue'
 import type { TaskFilters } from '@/types'
 import { ETaskPriority, ETaskCategory } from '@/gen/api/src/models'
 
@@ -161,6 +139,11 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const isOpen = ref(false)
+
+const toggleFilters = () => {
+  isOpen.value = !isOpen.value
+}
 
 const localFilters = reactive<TaskFilters>({
   ...props.filters,
@@ -242,13 +225,39 @@ watch(() => props.filters, (newFilters) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  cursor: pointer;
+  padding: .5rem;
+  background: #f7f7f7;
+  border-radius: 6px;
+  user-select: none;
+}
+.toggle-icon {
+  font-size: 1rem;
+  color: #555;
+}
+
+.accordion-enter-active, .accordion-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+.accordion-enter-from, .accordion-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+.accordion-enter-to, .accordion-leave-from {
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.filters-body {
+  margin-top: 1rem;
 }
 
 .filters-buttons {
   display: flex;
   gap: 10px;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .filters-header h3 {
@@ -330,6 +339,18 @@ watch(() => props.filters, (newFilters) => {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 20px;
+}
+
+.checkbox-group {
+  display: flex; /* quebra para a linha de baixo se faltar espaço */
+  gap: 3px;       /* espaço entre os itens */
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;        /* espaço entre checkbox e texto */
+  cursor: pointer;
 }
 
 .summary-text {
