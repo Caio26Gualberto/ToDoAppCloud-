@@ -342,14 +342,14 @@ watch(() => props.filters, (newFilters) => {
 }
 
 .checkbox-group {
-  display: flex; /* quebra para a linha de baixo se faltar espaço */
-  gap: 3px;       /* espaço entre os itens */
+  display: flex;
+  gap: 3px;       
 }
 
 .checkbox-group label {
   display: flex;
   align-items: center;
-  gap: 6px;        /* espaço entre checkbox e texto */
+  gap: 6px;
   cursor: pointer;
 }
 

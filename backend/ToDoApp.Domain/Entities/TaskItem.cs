@@ -9,7 +9,7 @@ namespace ToDoApp.Domain.Entities
         public bool IsCompleted { get; set; } = false;
         public ETaskPriority TaskPriority { get; set; } = ETaskPriority.Normal;
         public DateTime? DueDate { get; set; }
-        public List<TaskCategoryItem> TaskCategories { get; set; } = new List<TaskCategoryItem>();
+        public List<TaskCategoryItem>? TaskCategories { get; set; } = new List<TaskCategoryItem>();
     }
 }
 

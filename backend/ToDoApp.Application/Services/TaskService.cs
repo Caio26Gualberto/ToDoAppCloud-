@@ -19,6 +19,7 @@ namespace ToDoApp.Application.Services
             _taskItemRepository = repository;
             _taskCategoryItemRepository = taskCategoryRespository;
         }
+
         public async Task AddTaskAsync(TaskItemInput input)
         {
             ValidateTaskInput(input);
@@ -30,18 +31,14 @@ namespace ToDoApp.Application.Services
                 TaskPriority = input.TaskPriority,
                 DueDate = input.DueDate,
                 IsCompleted = false,
-                TaskCategories = new List<TaskCategoryItem>()
-            };
-
-            foreach (var category in input.TaskCategories)
-            {
-                taskItem.TaskCategories.Add(new TaskCategoryItem
+                TaskCategories = input.TaskCategories?.Any() == true ?
+                input.TaskCategories.Select(c => new TaskCategoryItem
                 {
-                    Category = category,
+                    Category = c,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
-                });
-            }
+                }).ToList() : null
+            };
 
             await _taskItemRepository.AddAsync(taskItem);
         }
@@ -57,11 +54,11 @@ namespace ToDoApp.Application.Services
         public async Task<PagedResult<TaskItem>> GetAllTasksAsync(TaskItemListInput input)
         {
             var taskItems = _taskItemRepository.GetAllAsync().Include(x => x.TaskCategories);
-            
+
             var query = taskItems
                 .WhereIf(!string.IsNullOrEmpty(input.Title), x => x.Title.ToLower().Contains(input.Title!.ToLower()))
                 .WhereIf(input.TaskPriority != default, x => x.TaskPriority == input.TaskPriority)
-                .WhereIf(input.TaskCategory != null && input.TaskCategory.Any(),x => input.TaskCategory!.All(c => x.TaskCategories.Select(tc => tc.Category).Contains(c)))
+                .WhereIf(input.TaskCategory != null && input.TaskCategory.Any(), x => input.TaskCategory!.All(c => x.TaskCategories.Select(tc => tc.Category).Contains(c)))
                 .WhereIf(input.MinDueDate.HasValue, x => x.DueDate.HasValue && x.DueDate.Value.Date >= input.MinDueDate!.Value.Date)
                 .WhereIf(input.MaxDueDate.HasValue, x => x.DueDate.HasValue && x.DueDate.Value.Date <= input.MaxDueDate!.Value.Date)
                 .WhereIf(input.IsCompleted.HasValue, x => x.IsCompleted == input.IsCompleted);
@@ -140,7 +137,7 @@ namespace ToDoApp.Application.Services
                 await _taskItemRepository.UpdateAsync(task);
             }
         }
-    
+
         private void ValidateTaskInput(TaskItemInput input)
         {
             if (input == null)
@@ -152,14 +149,12 @@ namespace ToDoApp.Application.Services
             if (!Enum.IsDefined(typeof(ETaskPriority), input.TaskPriority))
                 throw new ArgumentException("Prioridade inválida");
 
-            if (input.TaskCategories == null || !input.TaskCategories.Any())
-                throw new ArgumentException("É necessário escolher ao menos uma categoria");
-
-            foreach (var category in input.TaskCategories)
-            {
-                if (!Enum.IsDefined(typeof(ETaskCategory), category))
-                    throw new ArgumentException($"Categoria inválida: {category}");
-            }
+            if (input.TaskCategories != null || input.TaskCategories!.Any())
+                foreach (var category in input.TaskCategories!)
+                {
+                    if (!Enum.IsDefined(typeof(ETaskCategory), category))
+                        throw new ArgumentException($"Categoria inválida: {category}");
+                }
 
             if (input.DueDate == default)
                 throw new ArgumentException("Data de vencimento inválida");

@@ -1,0 +1,10 @@
+﻿################################################################################
+# Este arquivo .gitignore foi criado automaticamente pelo Microsoft(R) Visual Studio.
+################################################################################
+
+/backend/.vs/ToDoApp/CopilotIndices/17.14.827.52834/CodeChunks.db
+/backend/.vs/ToDoApp/CopilotIndices/17.14.827.52834/SemanticSymbols.db
+
+**/bin/
+**/obj/
+**/.vs/
